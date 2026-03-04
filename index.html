@@ -155,7 +155,20 @@ Saved ✔
 
 <div class="card">
 <button onclick="gacha()">🎲 Gacha ($<span id="gachaCost">50</span>)</button>
- <button id="dailyBtn" onclick="claimDaily()">🎁 Claim</button>
+<div id="dailyNotif" style="
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:black;
+padding:20px 30px;
+border-radius:15px;
+display:none;
+z-index:9999;
+font-size:18px;
+box-shadow:0 0 25px gold;
+text-align:center;">
+</div>
 <button onclick="buySlot()">➕ Buy Slot ($<span id="slotCost">100</span>)</button>
 </div>
 
@@ -453,7 +466,8 @@ updateUI();
 /* auto save 1 detik + offline */
 function saveGame(){
  localStorage.setItem("idlePetSave", JSON.stringify({
-   money, clickPower, clickCost, gachaCost, slotCost, slots, pets, lastSave:Date.now()
+   money, clickPower, clickCost, gachaCost, slotCost, slots, pets, lastSave:Date.now(),
+  dailyTimer
  }));
 
  let n = document.getElementById("saveNotif");
@@ -489,6 +503,7 @@ gachaCost=save.gachaCost||50;
 slotCost=save.slotCost||100;
 slots=save.slots||3;
 pets=save.pets||[];
+dailyTimer = save.dailyTimer || 0;
 
 let last=save.lastSave||Date.now();
 let diff=Math.floor((Date.now()-last)/1000);
@@ -699,37 +714,49 @@ setInterval(()=>{
  updateFarm();
 }, 1000);
 
- // ===== DAILY REWARD SYSTEM =====
-let dailyCooldown = 86400; // 24 jam
+// ===== DAILY SIMPLE =====
+let dailyCooldown = 86400;
 let dailyTimer = 0;
+
+function formatTime(sec){
+  let d = Math.floor(sec/86400);
+  let h = Math.floor((sec%86400)/3600);
+  let m = Math.floor((sec%3600)/60);
+
+  return (d>0?d+"d ":"") + (h>0?h+"h ":"") + m+"m";
+}
 
 function claimDaily(){
   if(dailyTimer > 0) return;
 
-  let income = 0;
-  pets.forEach(p=>income+=p.income);
+  let income = pets.reduce((a,b)=>a+b.income,0);
+  let reward = Math.floor((income||10)*120);
 
-  let reward = Math.floor((income || 10) * 60);
   money += reward;
-
   dailyTimer = dailyCooldown;
+
+  showNotif("🎁 +$"+format(reward));
   updateUI();
   saveGame();
+}
 
-  alert("Daily Reward Claimed! +$" + format(reward));
+function showNotif(text){
+  let box=document.getElementById("dailyNotif");
+  box.innerText=text;
+  box.style.display="block";
+  setTimeout(()=>box.style.display="none",2000);
 }
 
 setInterval(()=>{
-  if(dailyTimer > 0) dailyTimer--;
+  if(dailyTimer>0) dailyTimer--;
 
-  let btn = document.getElementById("dailyBtn");
+  let btn=document.getElementById("dailyBtn");
   if(btn){
-    btn.innerText = dailyTimer > 0 
-      ? "⏳ " + dailyTimer + "s"
-      : "🎁 Claim";
+    btn.innerText = dailyTimer>0
+      ? "⏳ "+formatTime(dailyTimer)
+      : "🎁 Daily Reward";
   }
 },1000);
-
 </script>
 </body>
 </html>
