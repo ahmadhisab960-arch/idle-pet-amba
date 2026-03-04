@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Idle Pet Empire</title>
+
+<style>
+*{box-sizing:border-box;user-select:none;-webkit-user-select:none;}
+body{
+margin:0;
+font-family:'Segoe UI',sans-serif;
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+color:white;
+overflow-x:hidden;
+padding-top:90px;
+}
+.container{max-width:1000px;margin:auto;padding:20px;}
+.card{
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(10px);
+border-radius:15px;
+padding:20px;
+margin-bottom:20px;
+box-shadow:0 0 20px rgba(0,0,0,0.4);
+}
+h1{text-align:center;margin-bottom:10px;}
+.money{text-align:center;font-size:18px;margin-bottom:10px;}
+button{
+padding:10px 18px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+font-weight:bold;
+background:linear-gradient(135deg,#00c6ff,#0072ff);
+color:white;
+transition:all 0.1s ease;
+margin:3px;
+}
+button:active{transform:scale(0.92);}
+.slot{
+border:2px dashed rgba(255,255,255,0.3);
+border-radius:10px;
+padding:10px;
+margin:5px 0;
+background:rgba(255,255,255,0.05);
+}
+.top-bar{
+position:fixed;
+top:0;
+left:0;
+right:0;
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:10px 15px;
+background:rgba(0,0,0,0.4);
+backdrop-filter:blur(10px);
+z-index:999;
+}
+#confirmBox{
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:rgba(0,0,0,0.9);
+padding:20px;
+border-radius:15px;
+display:none;
+z-index:1000;
+text-align:center;
+}
+#gachaDisplay{
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:rgba(0,0,0,0.95);
+padding:25px 40px;
+border-radius:15px;
+font-size:20px;
+display:none;
+z-index:2000;
+box-shadow:0 0 30px gold;
+text-align:center;
+white-space:pre-line;
+}
+
+.glowLegend{
+animation:glowLegend 1s ease-out;
+}
+
+@keyframes glowLegend{
+0%{box-shadow:0 0 5px white;}
+50%{box-shadow:0 0 40px gold;}
+100%{box-shadow:0 0 10px white;}
+}
+
+#saveNotif{
+ position:fixed;
+ top:10px;
+ left:50%;
+ transform:translateX(-50%);
+ background:rgba(0,0,0,0.7);
+ padding:6px 12px;
+ border-radius:8px;
+ display:none;
+ z-index:2000;
+}
+
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <button onclick="activateAuto()">⚡ Auto Click</button>
+    <div id="autoTimer" style="font-size:12px;">Ready</div>
+  </div>
+  <div>
+    <button onclick="activateDouble()">💎 2X Click</button>
+    <div id="doubleTimer" style="font-size:12px;">Ready</div>
+  </div>
+</div>
+
+<div id="saveNotif" style="
+ position:fixed;
+ top:10px;
+ left:50%;
+ transform:translateX(-50%);
+ background:rgba(0,0,0,0.7);
+ padding:6px 12px;
+ border-radius:8px;
+ font-size:12px;
+ display:none;
+ z-index:9999;
+">
+Saved ✔
+</div>
+
+<div class="container">
+<h1>🐾 Idle Pet Empire</h1>
+
+<div class="money">
+💰 $<span id="money">0</span><br>
+🖱 Click Power: $<span id="clickPowerText">1</span><br>
+📈 Income/sec: $<span id="incomeSec">1</span>
+</div>
+
+<div class="card">
+<button onclick="manualClick(event)">💵 Click</button>
+<button onclick="upgradeClick()">Upgrade Click ($<span id="clickCost">20</span>)</button>
+<button onclick="resetGame()">🗑 Reset</button>
+</div>
+
+<div class="card">
+<button onclick="gacha()">🎲 Gacha ($<span id="gachaCost">50</span>)</button>
+<button onclick="buySlot()">➕ Buy Slot ($<span id="slotCost">100</span>)</button>
+</div>
+
+<div class="card">
+  <button onclick="autoBattle()">⚔️ Auto Battle</button>
+  <button onclick="treasureHunt()">🗺️ Treasure Hunt</button>
+  <button onclick="idleMode()">🕹️Idle Mode</button>
+  <button onclick="dungeonRun()">🏰 Dungeon Run</button>
+  <div id="battleMsg"></div>
+</div>
+
+<div class="card">
+  <h3>🌱 Farming</h3>
+  <div id="fields"></div>
+  <button onclick="buyField()">➕ Buy Field ($100)</button>
+</div>
+
+<div class="card">
+<h3>Pet Slots</h3>
+<div id="slots"></div>
+</div>
+</div>
+
+<div class="card">
+<h3>📚 Encyclopedia</h3>
+<button onclick="openEncyclopedia()">Open Encyclopedia</button>
+</div>
+
+<div id="encyclopediaBox" style="
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.8);
+display:none;
+z-index:3000;
+overflow:auto;
+">
+  <div style="
+  background:#222;
+  margin:40px auto;
+  padding:20px;
+  max-width:900px;
+  border-radius:15px;
+  color:white;
+  ">
+    <h2>Pet Encyclopedia</h2>
+    <div id="encyList"></div>
+    <button onclick="closeEncyclopedia()">Close</button>
+  </div>
+</div>
+
+<div id="confirmBox">
+<div id="confirmText"></div>
+<br>
+<button onclick="confirmSell()">Confirm</button>
+<button onclick="cancelSell()">Cancel</button>
+</div>
+
+<div id="gachaDisplay"></div>
+
+<script>
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+function beep(freq=400,duration=80){
+let o=ctx.createOscillator();
+let g=ctx.createGain();
+o.connect(g); g.connect(ctx.destination);
+o.frequency.value=freq;
+o.start();
+g.gain.setValueAtTime(0.1,ctx.currentTime);
+o.stop(ctx.currentTime+duration/1000);
+}
+
+let money=0;
+let clickPower=1;
+let clickCost=20;
+let gachaCost=50;
+let slotCost=100;
+let slots=3;
+let pets=[];
+let autoCooldown=150;
+let autoDuration=60;
+let autoActive=false;
+let autoCDTimer=0;
+let doubleActive=false;
+let doubleCDTimer=0;
+let sellIndex=null;
+let rolling=false;
+
+/* rarity & pet generation */
+const rarityNames=[
+"Common","Uncommon","Rare","Elite","Epic","Super Epic","Ultra","Mega","Legendary","Mythic",
+"Ancient","Sacred","Divine","Celestial","Astral","Eternal","Phantom","Shadow","Void","Chaos",
+"Omega","Alpha","Prime","Overlord","Emperor","Transcendent","Infinite","Godly","Titan","Abyssal",
+"Arcane","Cosmic","Galactic","Stellar","Nova","Quantum","Eclipse","Oblivion","Ascendant","Immortal",
+"Supreme","Exalted","Radiant","Doombringer","Chrono","Hyperion","Paragon","Genesis","Apocalypse","Omnipotent"
+];
+
+function format(n){
+if(n>=1e12)return (n/1e12).toFixed(2)+"T";
+if(n>=1e9)return (n/1e9).toFixed(2)+"B";
+if(n>=1e6)return (n/1e6).toFixed(2)+"M";
+if(n>=1e3)return (n/1e3).toFixed(2)+"K";
+return Math.floor(n);
+}
+
+const petNames=[
+"Emberfang","Shadowclaw","Lumina","Frostbite","Abyssor","Voltaris","Nyxaria","Solflare","Grimtail","Zephyra",
+"Ironhide","Stormlash","Blazenix","Moonshade","Crystara","Venomir","Skyterror","Ignivar","Duskwolf","Arcanox",
+"Thunderix","Oblivionis","Flarehound","Eclipseon","Titanis","Voidling","Starflare","Drakaris","Infernia","Celestara",
+"Phantomis","Glacieron","Pyronix","Seraphyx","Dreadmaw","Cosmoria","Nebulon","Ashenclaw","Tempestris","Runeblade",
+"Nightbane","Solarion","Mystwing","Gravitor","Blightfang","Aurorix","Cindermaw","Astralion","Ravager","Mythra",
+"Stormbringer","Venatrix","Darkflare","Emberlord","Skyrend","Feralis","Voidreign","Ignisoul","Cryostorm","Bloodfang",
+"Shadowflare","Lunaris","Aetherion","Flamewarden","Thornlash","Netheris","Starfang","Blazewing","Obsidior","Stormveil",
+"Pyroshade","Grimhowl","Radiantis","Nightflare","Zephyros","Frostfang","Solarflare","Drakonis","Ashbringer","Voidfang",
+"Celestior","Mystaris","Infernost","Thundermaw","Moonfang","Stormclaw","Nebularis","Ignivarus","Frostveil","Blazefury",
+"Darkhowl","Aurorion","Cinderglow","Titanflare","Abyssfang","Voltrix","Eclipsor","Shadowfang","Starborn","Omnirex"
+];
+
+const petList=[];
+for(let i=0;i<100;i++){
+let rarityIndex=Math.floor(Math.random()*50);
+let rarityName=rarityNames[rarityIndex];
+let basePower=(i+1)*(rarityIndex+1);
+let income=Math.floor(Math.pow(basePower,1.35));
+let price=Math.floor(income*25);
+petList.push({name:petNames[i],rarity:rarityName,rarityIndex,rate:51-rarityIndex,income,price});
+}
+
+function updateUI(){
+let income=0;
+pets.forEach(p=>income+=p.income);
+document.getElementById("money").innerText=format(money);
+document.getElementById("clickCost").innerText=format(clickCost);
+document.getElementById("gachaCost").innerText=format(gachaCost);
+document.getElementById("slotCost").innerText=format(slotCost);
+document.getElementById("clickPowerText").innerText=format(clickPower*(doubleActive?2:1));
+document.getElementById("incomeSec").innerText=format(income||1);
+renderSlots();
+}
+
+/* gacha with confirm */
+function gacha(){
+if(rolling||money<gachaCost||pets.length>=slots) return;
+money-=gachaCost;
+rolling=true;
+
+let total=petList.reduce((a,b)=>a+b.rate,0);
+let rand=Math.random()*total,acc=0,wonPet=null;
+for(let p of petList){acc+=p.rate;if(rand<=acc){wonPet=p;break;}}
+
+let display=document.getElementById("gachaDisplay");
+display.style.display="block";
+
+let spin=setInterval(()=>{
+let randomPet=petList[Math.floor(Math.random()*petList.length)];
+display.innerText=randomPet.name+"\n"+randomPet.rarity;
+},80);
+
+setTimeout(()=>{
+clearInterval(spin);
+display.innerText="✨ "+wonPet.name+" ✨\n"+wonPet.rarity+"\n\nTap to Confirm";
+
+if(wonPet.rarityIndex>=40){
+display.classList.add("glowLegend");
+beep(1200,200);
+}
+
+display.onclick=function(){
+display.style.display="none";
+rolling=false;
+pets.push({...wonPet});
+gachaCost=Math.floor(gachaCost*1.15);
+updateUI();
+};
+
+},2000);
+updateUI();
+}
+
+function manualClick(e){
+let gain=clickPower*(doubleActive?2:1);
+money+=gain;
+beep(500,60);
+updateUI();
+}
+
+function upgradeClick(){
+if(money>=clickCost){
+money-=clickCost;
+clickPower=Math.floor(clickPower*1.35+3);
+let scale=1.28+(clickPower/2000000);
+if(scale>1.5)scale=1.5;
+clickCost=Math.floor(clickCost*scale);
+beep(700,80);
+updateUI();
+}
+}
+
+function activateAuto(){
+if(autoCDTimer>0)return;
+autoActive=true;
+autoCDTimer=autoCooldown;
+beep(300,150);
+let auto=setInterval(()=>{money+=clickPower;updateUI();},100);
+setTimeout(()=>{clearInterval(auto);autoActive=false;},autoDuration*1000);
+}
+
+function activateDouble(){
+if(doubleCDTimer>0)return;
+doubleActive=true;
+doubleCDTimer=autoCooldown;
+beep(900,150);
+setTimeout(()=>{doubleActive=false;},autoDuration*1000);
+}
+
+function resetGame(){
+    if(!confirm("Reset progress?")) return;
+
+    localStorage.removeItem("idlePetSave");
+    money = 0;
+    clickPower = 1;
+    clickCost = 20;
+    gachaCost = 50;
+    slotCost = 100;
+    slots = 3;
+    pets = [];
+
+    updateUI();
+    alert("Progress berhasil direset!");
+}
+
+setInterval(()=>{
+if(autoCDTimer>0) autoCDTimer--;
+document.getElementById("autoTimer").innerText=autoCDTimer>0?`CD: ${autoCDTimer}s`:(autoActive?"Active":"Ready");
+
+if(doubleCDTimer>0) doubleCDTimer--;
+document.getElementById("doubleTimer").innerText=doubleCDTimer>0?`CD: ${doubleCDTimer}s`:(doubleActive?"Active":"Ready");
+},1000);
+
+function buySlot(){
+if(money>=slotCost){
+money-=slotCost;
+slots++;
+slotCost=Math.floor(slotCost*1.6);
+beep(600,80);
+updateUI();
+}
+}
+
+function renderSlots(){
+let div=document.getElementById("slots");
+div.innerHTML="";
+for(let i=0;i<slots;i++){
+let slot=document.createElement("div");
+slot.className="slot";
+if(pets[i]){
+slot.innerHTML=`<b>${pets[i].name}</b> (${pets[i].rarity})<br>
+Income: $${format(pets[i].income)}/s<br>
+Sell: $${format(pets[i].price*0.7)}<br>
+<button onclick='askSell(${i})'>Sell</button>`;
+}else slot.innerHTML="Empty Slot";
+div.appendChild(slot);
+}
+}
+
+function askSell(i){
+sellIndex=i;
+document.getElementById("confirmBox").style.display="block";
+document.getElementById("confirmText").innerHTML=
+`Sell ${pets[i].name} for $${format(pets[i].price*0.7)} ?`;
+}
+
+function confirmSell(){
+money+=pets[sellIndex].price*0.7;
+pets.splice(sellIndex,1);
+sellIndex=null;
+beep(400,80);
+document.getElementById("confirmBox").style.display="none";
+updateUI();
+}
+
+function cancelSell(){
+sellIndex=null;
+document.getElementById("confirmBox").style.display="none";
+}
+
+setInterval(()=>{
+let income=0;
+pets.forEach(p=>income+=p.income);
+money+=income||1;
+updateUI();
+},1000);
+
+updateUI();
+
+/* auto save 1 detik + offline */
+function saveGame(){
+ localStorage.setItem("idlePetSave", JSON.stringify({
+   money, clickPower, clickCost, gachaCost, slotCost, slots, pets, lastSave:Date.now()
+ }));
+
+ let n = document.getElementById("saveNotif");
+ if(n){
+   n.style.display="block";
+   setTimeout(()=> n.style.display="none", 1000);
+ }
+}
+
+function loadGame(){
+let data=localStorage.getItem("idlePetSave");
+if(!data) return;
+
+function resetGame(){
+    if(!confirm("Reset progress?")) return;
+    localStorage.removeItem("idlePetSave");
+    money = 0;
+    pets = [];
+    clickPower = 1;
+    clickCost = 20;
+    gachaCost = 50;
+    slotCost = 100;
+    slots = 3;
+    updateUI();
+    alert("Progress reset!");
+}
+
+let save=JSON.parse(data);
+money=save.money||0;
+clickPower=save.clickPower||1;
+clickCost=save.clickCost||20;
+gachaCost=save.gachaCost||50;
+slotCost=save.slotCost||100;
+slots=save.slots||3;
+pets=save.pets||[];
+
+let last=save.lastSave||Date.now();
+let diff=Math.floor((Date.now()-last)/1000);
+
+if(diff>0){
+let income=0;
+pets.forEach(p=>income+=p.income);
+money += income*diff;
+}
+}
+
+setInterval(saveGame,1000);
+window.addEventListener("beforeunload",saveGame);
+loadGame();
+
+function openEncyclopedia(){
+  let list=document.getElementById("encyList");
+  list.innerHTML="";
+
+  let sorted = petList.slice();
+  sorted.sort((a,b)=>a.income - b.income); // urut income kecil -> besar
+
+  sorted.forEach(p=>{
+    let owned = pets.filter(x=>x.name===p.name).length;
+    let status = owned ? "✔ Owned" : "❌ Not Owned";
+
+    let div=document.createElement("div");
+    div.style.border="1px solid #444";
+    div.style.padding="8px";
+    div.style.margin="4px 0";
+    div.innerHTML=
+    `<b>${p.name}</b> (${p.rarity})<br>
+    Income: $${format(p.income)}/s<br>
+    Drop Rate: ${p.rate}<br>
+    ${status}`;
+
+    list.appendChild(div);
+  });
+
+  document.getElementById("encyclopediaBox").style.display="block";
+}
+
+function closeEncyclopedia(){
+  document.getElementById("encyclopediaBox").style.display="none";
+}
+
+let battleActive = false;
+let battleCooldown = false;
+
+function autoBattle(){
+ if(battleActive || battleCooldown) return;
+
+ battleActive = true;
+ let msg = document.getElementById("battleMsg");
+ msg.style.display = "block";
+ msg.innerText = "Battle starting...";
+
+ let power = pets.reduce((a,b)=>a + (a.income||0), 0);
+ let monsterHP = Math.floor(Math.random()* (power*2 + 50)) + 50;
+
+ let interval = setInterval(()=>{
+    if(monsterHP <= 0){
+       clearInterval(interval);
+       battleActive = false;
+       let reward = Math.floor(Math.random()*1000);
+       money += reward;
+       msg.innerText = "Victory! Reward $" + reward;
+       updateUI();
+       setTimeout(()=> msg.style.display="none", 2000);
+    } else {
+       monsterHP -= (power || 1);
+       msg.innerText = "Monster HP: " + monsterHP;
+    }
+ }, 1000);
+
+ setTimeout(()=>{
+    if(monsterHP > 0){
+       clearInterval(interval);
+       battleActive = false;
+       msg.innerText = "Defeat...";
+    }
+    battleCooldown = true;
+    setTimeout(()=> battleCooldown = false, 15000);
+ }, 20000);
+}
+
+let huntCooldown = false;
+
+function treasureHunt(){
+ if(huntCooldown) return;
+
+ let msg = document.getElementById("battleMsg");
+ msg.style.display = "block";
+ msg.innerText = "Searching treasure...";
+
+ let reward = Math.floor(Math.random()*3000) + 500; // 500 - 3500
+ money += reward;
+
+ setTimeout(()=>{
+   msg.innerText = "Treasure Found! +$" + reward;
+   updateUI();
+ }, 1500);
+
+ huntCooldown = true;
+ setTimeout(()=> huntCooldown = false, 10000); // cooldown 10 detik
+
+ setTimeout(()=> msg.style.display="none", 3000);
+}
+
+let idleActive = false;
+
+function idleMode(){
+ let msg = document.getElementById("battleMsg");
+ msg.style.display = "block";
+
+ if(idleActive){
+   idleActive = false;
+   msg.innerText = "Idle Mode OFF";
+ } else {
+   idleActive = true;
+   msg.innerText = "Idle Mode ON - earning passive income";
+
+   let interval = setInterval(()=>{
+     if(!idleActive){ clearInterval(interval); return; }
+     money += 1; // income kecil tapi terus
+     updateUI();
+   }, 1000);
+ }
+
+ setTimeout(()=> {
+   if(!idleActive) msg.style.display="none";
+ }, 2000);
+}
+
+let dungeonCooldown = false;
+
+function dungeonRun(){
+ if(dungeonCooldown) return;
+
+ let msg = document.getElementById("battleMsg");
+ msg.style.display = "block";
+ msg.innerText = "Entering dungeon...";
+
+ let power = pets.reduce((a,b)=>a + (a.income||0), 0);
+ let success = Math.random() * power > 50; // chance based on power
+
+ setTimeout(()=>{
+   if(success){
+     let reward = Math.floor(Math.random()*5000) + 1000;
+     money += reward;
+     msg.innerText = "Dungeon Cleared! +$" + reward;
+   } else {
+     msg.innerText = "Dungeon Failed...";
+   }
+   updateUI();
+ }, 1500);
+
+ dungeonCooldown = true;
+ setTimeout(()=> dungeonCooldown = false, 15000); // cooldown 15s
+
+ setTimeout(()=> msg.style.display="none", 3000);
+}
+
+let fields = [];
+
+function buyField(){
+ if(money < 100) return;
+ money -= 100;
+ fields.push({grow:0, ready:false});
+ updateFarm();
+}
+
+function updateFarm(){
+ let div = document.getElementById("fields");
+ div.innerHTML = "";
+
+ fields.forEach((f,i)=>{
+   let status = f.ready ? "Ready to Harvest" : "Growing...";
+   div.innerHTML += `
+     <div class="slot">
+       Field ${i+1} - ${status}
+       <button onclick="harvest(${i})">Harvest</button>
+     </div>
+   `;
+ });
+}
+
+function harvest(i){
+ let f = fields[i];
+ if(!f || !f.ready) return;
+
+ let reward = 50; // duit panen
+ money += reward;
+
+ // reset field supaya bisa grow lagi
+ f.grow = 0;
+ f.ready = false;
+
+ updateFarm();
+ updateUI();
+}
+
+setInterval(()=>{
+ fields.forEach(f=>{
+   if(!f.ready) f.grow += 1;
+   if(f.grow >= 60) f.ready = true; // 60 detik tumbuh
+ });
+ updateFarm();
+}, 1000);
+
+</script>
+</body>
+</html>
