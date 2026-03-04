@@ -155,6 +155,7 @@ Saved ✔
 
 <div class="card">
 <button onclick="gacha()">🎲 Gacha ($<span id="gachaCost">50</span>)</button>
+ <button id="dailyBtn" onclick="claimDaily()">🎁 Claim</button>
 <button onclick="buySlot()">➕ Buy Slot ($<span id="slotCost">100</span>)</button>
 </div>
 
@@ -697,6 +698,37 @@ setInterval(()=>{
  });
  updateFarm();
 }, 1000);
+
+ // ===== DAILY REWARD SYSTEM =====
+let dailyCooldown = 86400; // 24 jam
+let dailyTimer = 0;
+
+function claimDaily(){
+  if(dailyTimer > 0) return;
+
+  let income = 0;
+  pets.forEach(p=>income+=p.income);
+
+  let reward = Math.floor((income || 10) * 60);
+  money += reward;
+
+  dailyTimer = dailyCooldown;
+  updateUI();
+  saveGame();
+
+  alert("Daily Reward Claimed! +$" + format(reward));
+}
+
+setInterval(()=>{
+  if(dailyTimer > 0) dailyTimer--;
+
+  let btn = document.getElementById("dailyBtn");
+  if(btn){
+    btn.innerText = dailyTimer > 0 
+      ? "⏳ " + dailyTimer + "s"
+      : "🎁 Claim";
+  }
+},1000);
 
 </script>
 </body>
