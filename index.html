@@ -176,6 +176,7 @@ text-align:center;">
   <button onclick="autoBattle()">⚔️ Auto Battle</button>
   <button onclick="treasureHunt()">🗺️ Treasure Hunt</button>
   <button onclick="idleMode()">🕹️Idle Mode</button>
+  <button onclick="openShop()">🛒 Shop</button>
   <button onclick="dungeonRun()">🏰 Dungeon Run</button>
   <div id="battleMsg"></div>
 </div>
@@ -227,6 +228,32 @@ overflow:auto;
 </div>
 
 <div id="gachaDisplay"></div>
+
+ <div id="shopBox" style="
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.85);
+display:none;
+z-index:4000;
+overflow:auto;
+">
+
+<div style="
+background:#222;
+margin:40px auto;
+padding:20px;
+max-width:800px;
+border-radius:15px;
+">
+
+<h2>🛒 Potion Shop</h2>
+
+<div id="shopItems"></div>
+
+<button onclick="closeShop()">Close</button>
+
+</div>
+ </div>
 
 <script>
 const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -315,7 +342,7 @@ money-=gachaCost;
 rolling=true;
 
 let total=petList.reduce((a,b)=>a+b.rate,0);
-let rand=Math.random()*total,acc=0,wonPet=null;
+let rand=Math.random()*(total*(1-luckBonus)),acc=0,wonPet=null;
 for(let p of petList){acc+=p.rate;if(rand<=acc){wonPet=p;break;}}
 
 let display=document.getElementById("gachaDisplay");
@@ -755,8 +782,88 @@ setInterval(()=>{
     btn.innerText = dailyTimer>0
       ? "⏳ "+formatTime(dailyTimer)
       : "🎁 Daily Reward";
-  }
-},1000);
+ }
+
+ let shopCooldown=0
+let luckLevel=0
+let luckBonus=0
+
+ const shopItems=[
+{name:"🍀 Luck Potion",duration:180,effect:luckUpgrade},
+{name:"⚡ Mega Click",duration:60,effect:()=>{clickPower*=3}},
+{name:"💰 Cash Burst",duration:0,effect:()=>{money+=incomePerSec()*60}},
+{name:"🔥 Click Frenzy",duration:30,effect:()=>{clickPower*=5}},
+{name:"⚔ Rage Mode",duration:60,effect:()=>{clickPower*=2}},
+{name:"🚀 Auto Boost",duration:30,effect:()=>{}},
+{name:"🌪 Speed Mode",duration:60,effect:()=>{}},
+{name:"🌾 Farm Boost",duration:120,effect:()=>{}},
+{name:"💎 Treasure Luck",duration:120,effect:()=>{}},
+{name:"🧬 Pet Boost",duration:120,effect:()=>{}}
+]
+
+function openShop(){
+document.getElementById("shopBox").style.display="block"
+renderShop()
+}
+
+function closeShop(){
+document.getElementById("shopBox").style.display="none"
+}
+
+function renderShop(){
+
+let div=document.getElementById("shopItems")
+div.innerHTML=""
+
+shopItems.forEach((item,i)=>{
+
+let price=Math.floor(incomePerSec()*30*(i+1))
+
+if(item.name.includes("Luck")){
+price=Math.floor(incomePerSec()*50*Math.pow(3,luckLevel))
+}
+
+div.innerHTML+=`
+<div class="slot">
+<b>${item.name}</b><br>
+Price: $${price}<br>
+<button onclick="buyShop(${i},${price})">Buy</button>
+</div>
+`
+
+})
+
+}
+
+function buyShop(i,price){
+
+if(shopCooldown>0) return
+if(money<price) return
+
+money-=price
+
+shopItems[i].effect()
+
+shopCooldown=10
+
+updateUI()
+
+}
+
+function luckUpgrade(){
+
+if(luckLevel>=5) return
+
+luckLevel++
+
+luckBonus=luckLevel*0.1
+
+}
+
+setInterval(()=>{
+if(shopCooldown>0) shopCooldown--
+},1000)
+
 </script>
 </body>
 </html>
